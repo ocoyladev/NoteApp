@@ -1,5 +1,3 @@
-### `README.md`
-```markdown
 # NoteApp
 
 **NoteApp** is a notes application built with **NestJS (backend)** and **React (frontend)**, using **MySQL** as the database.  
@@ -51,18 +49,21 @@ This script performs the following steps:
 
 1. Checks and installs dependencies (`git`, `node`, `mysql`, `npx`).
 2. Clones the repository (if necessary).
-3. Creates the `notes_db` database.
-4. Creates the `user` table and inserts a default user:
-   - **Email:** `user@try.me`
-   - **Password (bcrypt hash):** `$2a$10$TO9Dm3ImsgTLyxmMFUFUl.MKNOH0yUXQxrTzJ12N7w8KJxrJYJQEi`
+3. Creates the .env file (backend)
 5. Installs dependencies for both backend and frontend.
 6. Starts both servers (`backend` and `frontend`).
 7. Configures the necessary firewall ports.
 
 ### 🎯 Accessing the Application
 
-- **Frontend (React + Vite):** [`http://localhost:3000`](http://localhost:3000)
-- **Backend (NestJS API):** [`http://localhost:4000`](http://localhost:4000)
+- **Frontend (React + Vite):** [`http://localhost:4000`](http://localhost:4000)
+- **Backend (NestJS API):** [`http://localhost:3000`](http://localhost:3000)
+
+Login:
+**Email:** `user@try.me`
+**Password:** `P@$$word`
+
+
 
 ## 🛠 Main Backend Endpoints
 
@@ -83,5 +84,3 @@ This script performs the following steps:
 
 This project is licensed under the **MIT** License.
 ```
-
---
