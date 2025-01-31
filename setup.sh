@@ -4,34 +4,60 @@
 DB_USER="root"
 DB_PASSWORD="4152963125"
 DB_NAME="notes_db"
-GITHUB_REPO_URL="https://github.com/ocoyladev/NoteApp.git"  # Reemplaza con la URL real
+GITHUB_REPO_URL="https://github.com/ocoyladev/NoteApp.git"  
 FRONTEND_PORT=4000
 BACKEND_PORT=3000
 
 USER_EMAIL="user@try.me"
 USER_PASSWORD="\$2a\$10\$TO9Dm3ImsgTLyxmMFUFUl.MKNOH0yUXQxrTzJ12N7w8KJxrJYJQEi"
 
-# Verificar dependencias
-echo "🔍 Verificando dependencias..."
+# Detectar sistema operativo
+OS=$(uname -s)
 
-check_command() {
-    command -v "$1" >/dev/null 2>&1 || { echo "❌ $1 no está instalado. Instálalo y vuelve a ejecutar el script."; exit 1; }
+# Verificar y instalar dependencias
+install_if_missing() {
+    if ! command -v "$1" &> /dev/null; then
+        echo "⚠️ $1 no encontrado. Instalando..."
+        case "$OS" in
+            Linux)
+                if command -v apt &> /dev/null; then
+                    sudo apt update && sudo apt install -y "$2"
+                elif command -v yum &> /dev/null; then
+                    sudo yum install -y "$2"
+                fi
+                ;;
+            Darwin)
+                if command -v brew &> /dev/null; then
+                    brew install "$2"
+                else
+                    echo "❌ Homebrew no encontrado. Instálalo manualmente: https://brew.sh/"
+                    exit 1
+                fi
+                ;;
+            *)
+                echo "❌ Sistema operativo no soportado."
+                exit 1
+                ;;
+        esac
+    else
+        echo "✅ $1 ya está instalado."
+    fi
 }
 
-check_command git
-check_command node
-check_command npm
-check_command mysql
-check_command npx
+echo "🔍 Verificando dependencias..."
+install_if_missing git git
+install_if_missing node node
+install_if_missing npm npm
+install_if_missing mysql mysql-server
+install_if_missing npx node
 
-echo "✅ Todas las dependencias están instaladas."
-
-# Clonar repositorio (opcional, si no está clonado)
+# Clonar repositorio si no existe
 if [ ! -d "./.git" ]; then
     echo "🔄 Clonando repositorio desde GitHub..."
     git clone "$GITHUB_REPO_URL" .
 fi
 
+# Configurar la base de datos
 echo "🛠 Configurando base de datos MySQL..."
 mysql -u"$DB_USER" -p"$DB_PASSWORD" -e "CREATE DATABASE IF NOT EXISTS $DB_NAME;"
 
@@ -63,9 +89,15 @@ npm run dev -- --port $FRONTEND_PORT &  # Ejecutar en segundo plano
 cd ..
 
 # Abrir puertos
-echo "🌍 Configurando firewall (si es necesario)..."
-sudo ufw allow $BACKEND_PORT
-sudo ufw allow $FRONTEND_PORT
+echo "🌍 Configurando firewall..."
+if command -v ufw &> /dev/null; then
+    sudo ufw allow $BACKEND_PORT
+    sudo ufw allow $FRONTEND_PORT
+elif command -v firewall-cmd &> /dev/null; then
+    sudo firewall-cmd --add-port=$BACKEND_PORT/tcp --permanent
+    sudo firewall-cmd --add-port=$FRONTEND_PORT/tcp --permanent
+    sudo firewall-cmd --reload
+fi
 
 echo "✅ Aplicación en ejecución."
 echo "📌 Backend: http://localhost:$BACKEND_PORT"
