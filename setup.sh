@@ -1,23 +1,23 @@
 #!/bin/bash
 
-# Configuración
+# Configuration
 DB_USER="root"
 DB_PASSWORD="4152963125"
 DB_NAME="notes_db"
-GITHUB_REPO_URL="https://github.com/ocoyladev/NoteApp.git"  
+REPO_URL="https://github.com/ocoyladev/NoteApp.git"
+APP_DIR="NoteApp"
+BACKEND_DIR="$APP_DIR/backend"
+FRONTEND_DIR="$APP_DIR/frontend"
 FRONTEND_PORT=4000
 BACKEND_PORT=3000
 
-USER_EMAIL="user@try.me"
-USER_PASSWORD="\$2a\$10\$TO9Dm3ImsgTLyxmMFUFUl.MKNOH0yUXQxrTzJ12N7w8KJxrJYJQEi"
-
-# Detectar sistema operativo
+# Detect OS
 OS=$(uname -s)
 
-# Verificar y instalar dependencias
+# Function to check and install dependencies
 install_if_missing() {
     if ! command -v "$1" &> /dev/null; then
-        echo "⚠️ $1 no encontrado. Instalando..."
+        echo "⚠️ $1 not found. Installing..."
         case "$OS" in
             Linux)
                 if command -v apt &> /dev/null; then
@@ -30,66 +30,65 @@ install_if_missing() {
                 if command -v brew &> /dev/null; then
                     brew install "$2"
                 else
-                    echo "❌ Homebrew no encontrado. Instálalo manualmente: https://brew.sh/"
+                    echo "❌ Homebrew not found. Please install it manually: https://brew.sh/"
                     exit 1
                 fi
                 ;;
             *)
-                echo "❌ Sistema operativo no soportado."
+                echo "❌ Unsupported operating system."
                 exit 1
                 ;;
         esac
     else
-        echo "✅ $1 ya está instalado."
+        echo "✅ $1 is already installed."
     fi
 }
 
-echo "🔍 Verificando dependencias..."
+echo "🔍 Checking dependencies..."
 install_if_missing git git
 install_if_missing node node
 install_if_missing npm npm
 install_if_missing mysql mysql-server
 install_if_missing npx node
 
-# Clonar repositorio si no existe
-if [ ! -d "./.git" ]; then
-    echo "🔄 Clonando repositorio desde GitHub..."
-    git clone "$GITHUB_REPO_URL" .
+# Clone repository if it doesn't exist
+if [ ! -d "NoteApp" ]; then
+    echo "🔄 Cloning repository from GitHub..."
+    git clone "$REPO_URL"
 fi
 
-# Configurar la base de datos
-echo "🛠 Configurando base de datos MySQL..."
-mysql -u"$DB_USER" -p"$DB_PASSWORD" -e "CREATE DATABASE IF NOT EXISTS $DB_NAME;"
+# Navigate to project directory
+cd "$APP_DIR" || { echo "❌ Failed to enter project directory"; exit 1; }
 
-# Crear tabla user si no existe e insertar usuario
-echo "👤 Creando usuario por defecto..."
-mysql -u"$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" <<EOF
-CREATE TABLE IF NOT EXISTS user (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL
-);
-INSERT IGNORE INTO user (email, password) VALUES ('$USER_EMAIL', '$USER_PASSWORD');
+# 📌 Crear archivo .env en backend/
+echo "📝 Creating .env file..."
+cat <<EOF > "$BACKEND_DIR/.env"
+DB_HOST=mysql-ocoyladev.alwaysdata.net
+DB_USER=ocoyladev_free
+DB_PASS=8Nwz@.nTN4g.rhc
+DB_NAME=ocoyladev_noteapp
+DB_PORT=3306
 EOF
 
-echo "✅ Usuario por defecto creado."
+echo "✅ .env file created in backend!"
 
-# Instalar dependencias y ejecutar backend
-echo "🚀 Instalando y ejecutando el backend..."
-cd backend || exit
+
+# Install dependencies and start backend
+echo "🚀 Installing and starting backend..."
+cd "$BACKEND_DIR" || { echo "❌ Failed to enter backend directory"; exit 1; }
 npm install
-npm run start &  # Ejecutar en segundo plano
+npm run start &  # Run in the background
 cd ..
 
-# Instalar dependencias y ejecutar frontend
-echo "🌐 Instalando y ejecutando el frontend..."
-cd frontend || exit
+# Install dependencies and start frontend
+echo "🌐 Installing and starting frontend..."
+cd frontend || { echo "❌ Failed to enter frontend directory"; exit 1; }
 npm install
-npm run dev -- --port $FRONTEND_PORT &  # Ejecutar en segundo plano
+npm run dev -- --port $FRONTEND_PORT &  # Run in the background
 cd ..
 
-# Abrir puertos
-echo "🌍 Configurando firewall..."
+# Open required ports
+echo "🌍 Configuring firewall..."
 if command -v ufw &> /dev/null; then
     sudo ufw allow $BACKEND_PORT
     sudo ufw allow $FRONTEND_PORT
@@ -99,6 +98,6 @@ elif command -v firewall-cmd &> /dev/null; then
     sudo firewall-cmd --reload
 fi
 
-echo "✅ Aplicación en ejecución."
+echo "✅ Application is running."
 echo "📌 Backend: http://localhost:$BACKEND_PORT"
 echo "📌 Frontend: http://localhost:$FRONTEND_PORT"
